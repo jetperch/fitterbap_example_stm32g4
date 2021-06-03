@@ -1,0 +1,4 @@
+[submodule "fitterbap"]
+	path = fitterbap
+	url = https://github.com/jetperch/fitterbap
+	branch = develop
