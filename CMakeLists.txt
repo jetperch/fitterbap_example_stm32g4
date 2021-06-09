@@ -60,11 +60,14 @@ set(APP_SOURCES
         App/Src/button_service.c
         App/Src/fitterbap_support.c
         App/Src/led_service.c
+        App/Src/log_handler.c
         App/Src/uart1.c
         App/Src/uart2.c
         App/Src/uart3.c
         App/Src/uart4.c
-        App/Src/uart5.c)
+        App/Src/uart5.c
+        fitterbap/third-party/tinyprintf/tinyprintf.c
+        )
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32G491RETx_FLASH.ld)
 
@@ -73,9 +76,11 @@ add_link_options(-mcpu=cortex-m4 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
 if (FBP_EXAMPLE_USE_DIRECT)
+    message(STATUS "fitterbap use direct")
     add_subdirectory(../fitterbap ext/fitterbap)
     include_directories(${FITTERBAP_INCLUDE})
 else ()
+    message(STATUS "fitterbap use submodule")
     add_subdirectory(fitterbap)
     include_directories(${FITTERBAP_INCLUDE})
 endif ()

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef FBP_EXAMPLE_STM32G4_PUBSUB_H__
-#define FBP_EXAMPLE_STM32G4_PUBSUB_H__
+#ifndef FBP_EXAMPLE_STM32G4_APP_COMMS_H__
+#define FBP_EXAMPLE_STM32G4_APP_COMMS_H__
 
 #include <stdint.h>
 #include "fitterbap/pubsub.h"
@@ -56,4 +56,4 @@ void app_comms_initialize();
 }
 #endif
 
-#endif  /* FBP_EXAMPLE_STM32G4_PUBSUB_H__ */
+#endif  /* FBP_EXAMPLE_STM32G4_APP_COMMS_H__ */

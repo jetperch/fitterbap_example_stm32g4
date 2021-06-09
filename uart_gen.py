@@ -14,13 +14,7 @@
 # limitations under the License.
 
 """
-Update the project version.
-
-Use the most recently CHANGELOG as the definitive version for:
-- CHANGELOG.md
-- CMakeLists.txt
-- include/fitterbap/version.h
-- pyfitterbap/version.py
+Update all UART files from one source.
 """
 
 import os
@@ -87,14 +81,16 @@ def _sub(lookup, file_pairs):
 
 def get_parser():
     p = argparse.ArgumentParser(
-        description='Generate UART files from a single template.')
+        description='Generate UART files from a single template.',
+        epilog='To update UARTs 2, 3, 4, and 5 from 1: '
+               'python3 uart_gen.py 1 2 3 4 5')
     p.add_argument('uart_src',
                    type=int,
-                   help='The source UART identifiers.')
+                   help='The source UART identifier.')
     p.add_argument('uart_dst',
                    type=int,
                    nargs='+',
-                   help='The destination UART identifiers.')
+                   help='The destination UART identifier.')
     return p
 
 

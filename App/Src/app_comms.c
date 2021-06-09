@@ -15,7 +15,9 @@
  */
 
 #include "app_comms.h"
+#include "log_handler.h"
 #include "fitterbap/comm/stack.h"
+#include "fitterbap/comm/timesync.h"
 #include "fitterbap/assert.h"
 #include "fitterbap/cstr.h"
 #include "fitterbap/ec.h"
@@ -44,6 +46,7 @@
 static fbp_os_mutex_t pubsub_mutex_;
 struct fbp_pubsub_s * pubsub = NULL;
 static TaskHandle_t pubsub_task_;
+static struct fbp_ts_s * timesync_ = NULL;
 
 enum pubsub_events_e {
     PUBSUB_EV_RECV = (1 << 0),
@@ -70,7 +73,7 @@ static const struct stack_fn_s stack_fn[5] = {
 struct fbp_stack_s * stacks[5] = {NULL, NULL, NULL, NULL, NULL};
 
 int64_t fbp_time_utc() {
-    return 0;  // todo implement using time sync
+    return fbp_ts_time(timesync_);
 }
 
 static char app_prefix() {
@@ -186,11 +189,15 @@ static void on_uart_recv_fn(void *user_data, uint8_t *buffer, uint32_t buffer_si
     fbp_dl_ll_recv(stack->dl, buffer, buffer_size);
 }
 
-int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
+static int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
     char subtopic[] = "c0/";
     struct fbp_evm_api_s evm_api;
     fbp_os_mutex_t mutex;
     char topic[FBP_PUBSUB_TOPIC_LENGTH_MAX];
+    topic_extend(topic, "log/");
+    log_handler_api = log_handler_factory(topic);
+    timesync_ = fbp_ts_initialize();
+
     struct fbp_dl_config_s dl_config = {
             .tx_window_size = 16,
             .rx_window_size = 16,
@@ -210,18 +217,31 @@ int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
                 .send_available = parent_phy_send_available,
         };
 
-        subtopic[1] = '0' + uart_offset + 1;
+        subtopic[1] = '1' + uart_offset;
         topic_extend(topic, subtopic);
 
         enum fbp_port0_mode_e mode = (uart_offset & 1) ? FBP_PORT0_MODE_CLIENT : FBP_PORT0_MODE_SERVER;
         stacks[uart_offset] = fbp_stack_initialize(&dl_config, mode, topic,
-                                                   &evm_api, &ll, pubsub);
+                                                   &evm_api, &ll, pubsub,
+                                                   (uart_offset == 1) ? timesync_ : NULL);
         if (!stacks[uart_offset]) {
             FBP_FATAL("host_link_stack");
         }
         fbp_stack_mutex_set(stacks[uart_offset], mutex);
         fn->recv_register(on_uart_recv_fn, stacks[uart_offset]);
     }
+
+    struct fbp_union_s value;
+    fbp_pubsub_query(pubsub, FBP_PUBSUB_TOPIC_PREFIX, &value);
+    // pointer remains valid after return due to pubsub implementation
+    log_handler_api->topic_prefix = value.value.str;
+
+    log_handler_api->transport = stacks[1]->transport;
+    fbp_transport_port_register(stacks[1]->transport, log_handler_api->port_id,
+                                log_handler_api->meta,
+                                log_handler_api->on_event,
+                                log_handler_api->on_recv,
+                                log_handler_api);
 
     return 0;
 }
