@@ -16,6 +16,7 @@
 
 #include "button_service.h"
 #include "app_comms.h"
+#include "fitterbap/log.h"
 #include "main.h"
 #include "stm32g4xx_ll_gpio.h"
 #include <stdbool.h>
@@ -41,6 +42,7 @@ void button_service_poll() {
     uint32_t now = LL_GPIO_IsInputPinSet(B1_GPIO_Port, B1_Pin);
     if (now != button_value_) {
         button_value_ = now;
+        FBP_LOGI("on_button(%s)", button_value_ ? "on" : "off");
         app_publish(TOPIC, &fbp_union_u8_r(now), NULL, NULL);
     }
 }

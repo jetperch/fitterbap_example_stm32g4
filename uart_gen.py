@@ -23,20 +23,20 @@ import argparse
 
 
 MYPATH = os.path.dirname(os.path.abspath(__file__))
-H_FILE = os.path.join(MYPATH, 'Core', 'Inc', 'uart{id}.h')
-C_FILE = os.path.join(MYPATH, 'Core', 'Src', 'uart{id}.c')
+H_FILE = os.path.join(MYPATH, 'App', 'Inc', 'uart{id}.h')
+C_FILE = os.path.join(MYPATH, 'App', 'Src', 'uart{id}.c')
 UART_INFO = {
-    # name, uart, dma, dma_ch_rx, dma_ch_tx
-    1: ('USART1', 1, 1, 1, 2),
-    2: ('USART2', 2, 1, 3, 4),
-    3: ('USART3', 3, 1, 5, 6),
-    4: ('UART4',  4, 1, 7, 8),
-    5: ('UART5',  5, 2, 1, 2),
+    # name, uart, dma, dma_ch_rx, dma_ch_tx, alternate_function
+    1: ('USART1', 1, 1, 1, 2, 7),
+    2: ('USART2', 2, 1, 3, 4, 7),
+    3: ('USART3', 3, 1, 5, 6, 7),
+    4: ('UART4',  4, 1, 7, 8, 5),
+    5: ('UART5',  5, 2, 1, 2, 5),
 }
 
 def _re_table(uart_src, uart_dst):
-    src_name, src_id, src_dma, src_dma_ch_rx, src_dma_ch_tx = UART_INFO[uart_src]
-    dst_name, dst_id, dst_dma, dst_dma_ch_rx, dst_dma_ch_tx = UART_INFO[uart_dst]
+    src_name, src_id, src_dma, src_dma_ch_rx, src_dma_ch_tx, src_altf = UART_INFO[uart_src]
+    dst_name, dst_id, dst_dma, dst_dma_ch_rx, dst_dma_ch_tx, dst_altf = UART_INFO[uart_dst]
     clock_by_port = {
         1: 'LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_USART1)',
         2: 'LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_USART2)',
@@ -44,14 +44,14 @@ def _re_table(uart_src, uart_dst):
         4: 'LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART4)',
         5: 'LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_UART5)',
     }
-    
+
     lookup = [
         (re.escape(clock_by_port[src_id]), clock_by_port[dst_id]),
+        (f'LL_GPIO_AF_{src_altf}', f'LL_GPIO_AF_{dst_altf}'),
         (f'uart{src_id}', f'uart{dst_id}'),
         (f'UART{src_id}', f'UART{dst_id}'),
         (f'usart{src_id}', f'usart{dst_id}'),
         (f'USART{src_id}', f'USART{dst_id}'),
-        (f'DMA{src_dma}', f'DMA{dst_dma}'),
         ('USART4', 'UART4'),
         ('USART5', 'UART5'),
     ]
@@ -61,6 +61,8 @@ def _re_table(uart_src, uart_dst):
         lookup.append((rf'LL_DMA_ClearFlag_([a-zA-Z]+){ch_src}', rf'LL_DMA_ClearFlag_\g<1>{ch_dst}'))
         lookup.append((rf'LL_DMA_IsActiveFlag_([a-zA-Z]+){ch_src}', rf'LL_DMA_IsActiveFlag_\g<1>{ch_dst}'))
         lookup.append((rf'DMA_IFCR_(\S+){ch_src}', rf'DMA_IFCR_\g<1>{ch_dst}'))
+    lookup.append((f'DMA{src_dma}', f'DMA{dst_dma}'))
+    # print('\n   '.join([f'{a} : {b}' for a, b in lookup]))
     return lookup
 
 
@@ -72,6 +74,7 @@ def _re(s, lookup):
 
 def _sub(lookup, file_pairs):
     for fname_in, fname_out in file_pairs:
+        # print(f'{fname_in} => {fname_out}')
         with open(fname_in, encoding='utf-8') as f:
             s = f.read()
         s = _re(s, lookup)

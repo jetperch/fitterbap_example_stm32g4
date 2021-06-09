@@ -327,17 +327,11 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
-  int count = 0;
   /* Infinite loop */
   for(;;)
   {
     button_service_poll();
     osDelay(50);
-    ++count;
-    if (count > 20) {
-        FBP_LOGW("tick");
-        count = 0;
-    }
   }
   /* USER CODE END 5 */
 }
