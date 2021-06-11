@@ -195,7 +195,7 @@ static int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
     fbp_os_mutex_t mutex;
     char topic[FBP_PUBSUB_TOPIC_LENGTH_MAX];
     topic_extend(topic, "log/");
-    log_handler_api = log_handler_factory(topic);
+    log_handler_factory(topic);  // ignore return, use singleton API
     timesync_ = fbp_ts_initialize();
 
     struct fbp_dl_config_s dl_config = {
@@ -229,20 +229,15 @@ static int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
         }
         fbp_stack_mutex_set(stacks[uart_offset], mutex);
         fn->recv_register(on_uart_recv_fn, stacks[uart_offset]);
+
+        // Forward log messages from servers to local logger.
+        if (mode == FBP_PORT0_MODE_SERVER) {
+            fbp_logp_handler_register(stacks[uart_offset]->logp,
+                                      (fbp_logp_publish_formatted) fbp_logh_publish_formatted, NULL);
+        } else {
+            fbp_logh_dispatch_register(NULL, fbp_logp_recv, stacks[uart_offset]->logp);
+        }
     }
-
-    struct fbp_union_s value;
-    fbp_pubsub_query(pubsub, FBP_PUBSUB_TOPIC_PREFIX, &value);
-    // pointer remains valid after return due to pubsub implementation
-    log_handler_api->topic_prefix = value.value.str;
-
-    log_handler_api->transport = stacks[1]->transport;
-    fbp_transport_port_register(stacks[1]->transport, log_handler_api->port_id,
-                                log_handler_api->meta,
-                                log_handler_api->on_event,
-                                log_handler_api->on_recv,
-                                log_handler_api);
-
     return 0;
 }
 

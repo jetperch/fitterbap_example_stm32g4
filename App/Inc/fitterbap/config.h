@@ -40,11 +40,14 @@
 /* Set global log level */
 #define FBP_LOG_GLOBAL_LEVEL FBP_LOG_LEVEL_ALL
 
+/* Set the initial comm log port level for forwarding/receiving log messages. */
+#define FBP_LOGP_LEVEL FBP_LOG_LEVEL_NOTICE
+
 /* Override the log format */
-extern struct fbp_port_api_s * log_handler_api;
-int32_t fbp_logp_publish(struct fbp_port_api_s * api, uint8_t level, const char * filename, uint32_t line, const char * format, ...);
+struct fbp_logh_s;
+int32_t fbp_logh_publish(struct fbp_logh_s * self, uint8_t level, const char * filename, uint32_t line, const char * format, ...);
 #define FBP_LOG_PRINTF(level, format, ...) \
-    fbp_logp_publish(log_handler_api, level, __FILENAME__, __LINE__, format, __VA_ARGS__)
+    fbp_logh_publish(NULL, level, __FILENAME__, __LINE__, format, __VA_ARGS__)
 
 #define FBP_FRAMER_CRC32 fbp_crc32
 #define FBP_CRC_CRC32 1

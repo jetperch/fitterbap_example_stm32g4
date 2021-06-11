@@ -18,25 +18,25 @@
 #define FBP_EXAMPLE_STM32G4_LOG_HANDLER_H__
 
 #include <stdint.h>
-#include "fitterbap/comm/log_port.h"
+#include "fitterbap/logh.h"
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern struct fbp_port_api_s * log_handler_api;
-
 /**
- * @brief Create the (normally singleton) log handler instance.
+ * @brief Create the singleton log handler instance.
  *
- * @param topic The log topic prefix, such as "a/log/"
  * @return The log handler instance.
  *
- * The log handler will not forward messages until connected
- * to the transport and fbp_port_api_s->transport is set.
+ * Thread wrapper around "fitterbap/logh.h".  The thread calls
+ * fbp_logh_process().  Connect it to backend log message
+ * handlers using fbp_logh_dispatch_register().
+ *
+ * Call fbp_logh_publish() to publish messages.
  */
-struct fbp_port_api_s * log_handler_factory(const char * topic);
+struct fbp_logh_s * log_handler_factory();
 
 #ifdef __cplusplus
 }
