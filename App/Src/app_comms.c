@@ -221,9 +221,9 @@ static int32_t parent_link_initialize(struct fbp_pubsub_s * pubsub) {
         topic_extend(topic, subtopic);
 
         enum fbp_port0_mode_e mode = (uart_offset & 1) ? FBP_PORT0_MODE_CLIENT : FBP_PORT0_MODE_SERVER;
+        // use timesync on all client ports, but really should only be one.
         stacks[uart_offset] = fbp_stack_initialize(&dl_config, mode, topic,
-                                                   &evm_api, &ll, pubsub,
-                                                   (uart_offset == 1) ? timesync_ : NULL);
+                                                   &evm_api, &ll, pubsub, timesync_);
         if (!stacks[uart_offset]) {
             FBP_FATAL("host_link_stack");
         }
